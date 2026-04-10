@@ -8,10 +8,28 @@ const zlib = require('zlib');
 const https = require('https');
 const pty = require('node-pty');
 
-// Prevent uncaught PTY errors from crashing the entire app
+// ── Crash Logger ─────────────────────────────────────────────────────────
+// Writes every crash/rejection to ~/.claude/mygo-crash.log so we can
+// actually see what happened instead of the app just dying silently.
+const CRASH_LOG = path.join(os.homedir(), '.claude', 'mygo-crash.log');
+
+function crashLog(type, err) {
+  const ts = new Date().toISOString();
+  const stack = (err && err.stack) ? err.stack : String(err);
+  const line = `[${ts}] ${type}: ${stack}\n`;
+  try { fs.appendFileSync(CRASH_LOG, line); } catch (_) { /* fs broken, nothing we can do */ }
+  console.error(`[MyGo] ${type}:`, stack);
+}
+
+// ── Global Crash Protection ──────────────────────────────────────────────
+// The app must NEVER just close. Catch everything, log it, keep running.
+
 process.on('uncaughtException', (err) => {
-  console.error('[Pangea] Uncaught exception:', err.message);
-  if (err.message && err.message.includes('resize')) return;
+  crashLog('uncaughtException', err);
+});
+
+process.on('unhandledRejection', (reason) => {
+  crashLog('unhandledRejection', reason);
 });
 
 const CLAUDE_DIR = path.join(os.homedir(), '.claude');
@@ -47,6 +65,17 @@ let WORKSPACE_ROOT = getWorkspaceRoot();
 let mainWindow;
 let ptyProcesses = new Map(); // tabId -> { pty, color, name }
 let activeTabId = null;
+
+// Safe IPC send — never crashes even if mainWindow is gone
+function safeSend(channel, ...args) {
+  try {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send(channel, ...args);
+    }
+  } catch (err) {
+    crashLog('safeSend-failed', err);
+  }
+}
 let sidebarWatcher;
 let instanceId;
 let sessionId = null; // Legacy fallback — per-tab session IDs are stored in ptyProcesses[tabId].sessionId
@@ -271,6 +300,27 @@ function createWindow() {
   mainWindow.on('closed', () => {
     mainWindow = null;
     cleanup();
+  });
+
+  // ── Renderer Crash Protection ──────────────────────────────────────────
+  mainWindow.webContents.on('render-process-gone', (_event, details) => {
+    crashLog('render-process-gone', new Error(`reason=${details.reason} exitCode=${details.exitCode}`));
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      setTimeout(() => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          crashLog('renderer-reload', new Error('Reloading renderer after crash'));
+          mainWindow.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
+        }
+      }, 1000);
+    }
+  });
+
+  mainWindow.webContents.on('unresponsive', () => {
+    crashLog('renderer-unresponsive', new Error('Renderer became unresponsive'));
+  });
+
+  mainWindow.webContents.on('responsive', () => {
+    crashLog('renderer-responsive', new Error('Renderer recovered'));
   });
 
   // Check for crash recovery on startup
@@ -671,7 +721,7 @@ ipcMain.on('sidebar:pin', (_, item) => {
     pinned.push(item);
     savePinned(pinned);
   }
-  mainWindow.webContents.send('sidebar:pinned-update', pinned);
+  safeSend('sidebar:pinned-update', pinned);
 });
 
 ipcMain.on('sidebar:unpin', (_, item) => {
@@ -679,7 +729,7 @@ ipcMain.on('sidebar:unpin', (_, item) => {
   const key = getPinKey(item);
   pinned = pinned.filter(p => getPinKey(p) !== key);
   savePinned(pinned);
-  mainWindow.webContents.send('sidebar:pinned-update', pinned);
+  safeSend('sidebar:pinned-update', pinned);
 });
 
 ipcMain.handle('sidebar:get-pinned', () => {
@@ -1126,12 +1176,10 @@ ipcMain.handle('worksession:load', (_, wsId) => {
   saveLastWorkSessionId(wsId);
 
   // Send restore event to renderer (include textColor for full restore)
-  if (mainWindow) {
-    mainWindow.webContents.send('worksession:restore', {
-      tabs: restoreTabs,
-      textColor: ws.textColor || null
-    });
-  }
+  safeSend('worksession:restore', {
+    tabs: restoreTabs,
+    textColor: ws.textColor || null
+  });
 
   return ws;
 });
@@ -1903,16 +1951,12 @@ ipcMain.handle('skills:list', () => {
 
 ipcMain.on('skills:toggle', (_, { name, enabled }) => {
   const result = toggleSkill(name, enabled);
-  if (result.success && mainWindow) {
-    mainWindow.webContents.send('skills:updated', { skills: listAllSkills() });
-  }
+  if (result.success) safeSend('skills:updated', { skills: listAllSkills() });
 });
 
 ipcMain.on('skills:toggle-category', (_, { project, type, enabled }) => {
   toggleCategory(project, type, enabled);
-  if (mainWindow) {
-    mainWindow.webContents.send('skills:updated', { skills: listAllSkills() });
-  }
+  safeSend('skills:updated', { skills: listAllSkills() });
 });
 
 ipcMain.handle('skills:sync', () => {
