@@ -23,9 +23,9 @@ const GEMINI_FILE = path.join(CLAUDE_DIR, 'pangea-gemini-accounts.json');
 // Token lifetime: Google access tokens expire after ~3600s. Refresh at 50min.
 const TOKEN_REFRESH_THRESHOLD_MS = 50 * 60 * 1000;
 
-// Google Desktop OAuth (public, from Google Cloud SDK)
-const GOOGLE_CLIENT_ID = '764086051850-6qr4p6gpi6hn506pt8ejuq83di341hur.apps.googleusercontent.com';
-const GOOGLE_CLIENT_SECRET = 'd-FL95Q19q7MQmFpd7hHD0Ty';
+// Google Desktop OAuth — set via environment variables
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_AI_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID';
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_AI_CLIENT_SECRET || 'YOUR_GOOGLE_CLIENT_SECRET';
 const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/cloud-platform openid email profile';
 
 // === Status Tracking ===

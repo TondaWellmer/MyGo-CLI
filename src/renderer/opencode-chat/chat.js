@@ -267,7 +267,7 @@ class OpenCodeChat {
       wrap.style.height = '420px';
       wrap.innerHTML = '';
 
-      const clientId = '764086051850-6qr4p6gpi6hn506pt8ejuq83di341hur.apps.googleusercontent.com';
+      const clientId = window.__GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID';
       const scopes = 'https://www.googleapis.com/auth/cloud-platform openid email profile';
       const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth'
         + '?client_id=' + encodeURIComponent(clientId)
@@ -936,7 +936,7 @@ class OpenCodeChat {
           redirectUri = 'http://127.0.0.1:' + oauthInfo.port;
         } else {
           // Fallback: oob redirect (deprecated but may still work for some clients)
-          const clientId = '764086051850-6qr4p6gpi6hn506pt8ejuq83di341hur.apps.googleusercontent.com';
+          const clientId = window.__GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID';
           const scopes = 'https://www.googleapis.com/auth/generative-language https://www.googleapis.com/auth/cloud-platform openid email profile';
           redirectUri = 'urn:ietf:wg:oauth:2.0:oob';
           authUrl = 'https://accounts.google.com/o/oauth2/v2/auth'
