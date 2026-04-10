@@ -8,7 +8,7 @@
     "build": "npm run compile",
     "start": "npm run compile && electron .",
     "dev": "npm run compile && electron . --dev",
-    "package": "npm run compile && electron-builder --win portable"
+    "package": "npm run compile && electron-builder --win dir"
   },
   "build": {
     "appId": "com.mygo.cli",
@@ -26,13 +26,10 @@
     "win": {
       "target": [
         {
-          "target": "portable",
+          "target": "dir",
           "arch": ["x64"]
         }
       ]
-    },
-    "portable": {
-      "artifactName": "MyGo-CLI-${version}-portable.exe"
     }
   },
   "dependencies": {
