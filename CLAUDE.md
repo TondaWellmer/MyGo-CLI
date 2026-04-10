@@ -1,4 +1,4 @@
-# myGAUCLI — AI Chat Terminal
+# MyGo-CLI — AI Chat Terminal
 
 Stripped version of Pangea-CLI. Terminal + Chat only, no editors.
 

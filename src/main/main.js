@@ -2072,10 +2072,11 @@ ipcMain.on('claude:chat', async (event, { model, messages, apiKey, system }) => 
 ipcMain.on('opencode:abort', () => { if (activeAbortFn) { activeAbortFn(); activeAbortFn = null; } });
 
 // --- Gemini Free Tier Chat (Google OAuth2 Multi-Account + API key) ---
-// Google's official "Desktop App" OAuth client ID (supports loopback redirect)
-// Public client — embedded in open-source Google Cloud SDK
-const GOOGLE_AI_CLIENT_ID = '764086051850-6qr4p6gpi6hn506pt8ejuq83di341hur.apps.googleusercontent.com';
-const GOOGLE_AI_CLIENT_SECRET = 'd-FL95Q19q7MQmFpd7hHD0Ty';
+// Google OAuth client credentials for Gemini API access
+// Users: Create your own at https://console.cloud.google.com/apis/credentials
+// Select "Desktop App" type, enable "Generative Language API"
+const GOOGLE_AI_CLIENT_ID = process.env.GOOGLE_AI_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID';
+const GOOGLE_AI_CLIENT_SECRET = process.env.GOOGLE_AI_CLIENT_SECRET || 'YOUR_GOOGLE_CLIENT_SECRET';
 const GOOGLE_AI_SCOPES = 'https://www.googleapis.com/auth/cloud-platform openid email profile';
 
 // Local OAuth callback server (loopback redirect for Electron)

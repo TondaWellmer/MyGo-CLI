@@ -3,6 +3,8 @@ dist/
 .env
 *.pem
 *.key
+*.enc
+pangea-*.json
 
 # Session artifacts
 transcript_*.txt

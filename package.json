@@ -1,5 +1,5 @@
 {
-  "name": "mygaucli",
+  "name": "mygo-cli",
   "version": "0.1.0",
   "description": "AI Chat Terminal — Free & Premium Models mit Multi-Login",
   "main": "src/main/main.js",
